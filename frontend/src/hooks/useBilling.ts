@@ -73,7 +73,7 @@ export function useBilling() {
   const handleAddPaymentMethod = async (data: AddPaymentMethodData) => {
     setState(prevState => ({ ...prevState, loading: true }));
 
-    const response = await addPaymentMethod(data);
+    const response = await addPaymentMethod({ ...data, isDefault: data.isDefault ?? false });
 
     if (response.data) {
       const newPaymentMethod = response.data as PaymentMethod;
