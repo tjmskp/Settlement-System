@@ -1,0 +1,136 @@
+version: '3.8'
+
+services:
+  # API Gateway
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - user-service
+      - document-service
+      - communication-service
+      - appointment-service
+      - billing-service
+      - analytics-service
+
+  # User Service
+  user-service:
+    build:
+      context: ./services/user
+      dockerfile: Dockerfile
+    volumes:
+      - ./services/user:/var/www/html
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=settlemates_users
+      - DB_USERNAME=settlemates
+      - DB_PASSWORD=secret
+      - REDIS_HOST=redis
+      - QUEUE_CONNECTION=rabbitmq
+
+  # Document Service
+  document-service:
+    build:
+      context: ./services/document
+      dockerfile: Dockerfile
+    volumes:
+      - ./services/document:/var/www/html
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=settlemates_documents
+      - DB_USERNAME=settlemates
+      - DB_PASSWORD=secret
+      - AWS_ACCESS_KEY_ID=your_key
+      - AWS_SECRET_ACCESS_KEY=your_secret
+      - AWS_DEFAULT_REGION=ap-southeast-2
+      - AWS_BUCKET=settlemates-documents
+
+  # Communication Service
+  communication-service:
+    build:
+      context: ./services/communication
+      dockerfile: Dockerfile
+    volumes:
+      - ./services/communication:/var/www/html
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=settlemates_communication
+      - DB_USERNAME=settlemates
+      - DB_PASSWORD=secret
+      - REDIS_HOST=redis
+      - PUSHER_APP_ID=your_app_id
+      - PUSHER_APP_KEY=your_app_key
+      - PUSHER_APP_SECRET=your_app_secret
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_URL=http://localhost:80
+
+  # MySQL
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=settlemates
+      - MYSQL_PASSWORD=secret
+      - MYSQL_DATABASE=settlemates
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # Redis
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=settlemates
+      - RABBITMQ_DEFAULT_PASS=secret
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+volumes:
+  mysql_data:
+  redis_data:
+  rabbitmq_data:
+  elasticsearch_data: 
