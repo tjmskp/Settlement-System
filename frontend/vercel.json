@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://api.settlemates.com"
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://api.settlemates.com/api/:path*"
+    }
+  ]
+} 
